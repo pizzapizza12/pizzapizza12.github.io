@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Megalovania Soundboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        button {
+            font-size: 24px;
+            padding: 20px 40px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Megalovania Soundboard 🎵</h1>
+
+    <button onclick="document.getElementById('megalovania').play()">
+        ▶ Play Megalovania
+    </button>
+
+    <button onclick="document.getElementById('megalovania').pause(); document.getElementById('megalovania').currentTime = 0;">
+        ⏹ Stop
+    </button>
+
+    <audio id="megalovania" src="Megalovania.mp3"></audio>
+</body>
+</html>
