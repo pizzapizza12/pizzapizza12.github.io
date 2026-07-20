@@ -1,36 +1,116 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<!doctype html>
+<html>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
 <title>PizzadogXP Soundboard</title>
 <style>
 body{font-family:Arial;background:#120024;color:#fff;text-align:center;margin:0;padding:20px}
 h1{color:#7df9ff;text-shadow:0 0 10px #7df9ff}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-button{padding:14px;border-radius:10px;background:#25104d;color:#fff;border:2px solid #7df9ff;box-shadow:0 0 10px #7df9ff}
+button{padding:14px;border-radius:10px;background:#25104d;color:#fff;border:2px solid #7df9ff;box-shadow:0 0 10px #7df9ff;cursor:pointer}
 .controls{margin:15px}input{width:90%}footer{margin-top:20px;font-size:.8em;color:#ccc}
-</style></head><body>
+</style>
+</head>
+<body>
+
 <h1>🎵 PizzadogXP Soundboard</h1>
 <input id='search' placeholder='Search songs...' oninput='filter()'>
 <div id='now'>Currently Playing: Nothing</div>
+
 <div class='controls'>
-<div>🔊 Volume</div><input id='vol' type='range' min='0' max='1' step='.01' value='1'>
-<div>⏱️ Song Progress</div><input id='prog' type='range' min='0' max='100' value='0'>
-<div id='time'>0:00 / 0:00</div>
-<button onclick='pauseSong()'>Pause</button>
-<button onclick='resumeSong()'>Resume</button>
-<button onclick='repeat=!repeat;this.innerText=repeat?"Repeat: On":"Repeat: Off"'>Repeat: Off</button>
-<button onclick='stopAll()'>Stop All</button>
+    <div>🔊 Volume</div>
+    <input id='vol' type='range' min='0' max='1' step='.01' value='1'>
+    <div>⏱️ Song Progress</div>
+    <input id='prog' type='range' min='0' max='100' value='0'>
+    <div id='time'>0:00 / 0:00</div>
+    <button onclick='pauseSong()'>Pause</button>
+    <button onclick='resumeSong()'>Resume</button>
+    <button onclick='toggleRepeat(this)'>Repeat: Off</button>
+    <button onclick='stopAll()'>Stop All</button>
 </div>
+
 <div class='grid' id='grid'></div>
+<div id='audio-container' style='display:none;'></div>
+
 <script>
 const songs=["Megalovania","CrabRave","Astronomia","Sans","Bonetrousle","SpearOfJustice","StereoMadness","Deadlocked","Electrodynamix","Asgore","RushE","DeathByGlamour","MetalCrush","HopesAndDreams","SpiderDance","Shop","Finale"];
-let cur=null,repeat=false;
-songs.forEach(s=>grid.innerHTML+=`<button onclick="play('${s}')">${s.replace(/([A-Z])/g,' $1').trim()}</button><audio id="${s}" src="${s}.mp3"></audio>`);
-function play(id){stopAll();cur=document.getElementById(id);cur.volume=vol.value;cur.play();now.textContent="Currently Playing: "+id;cur.ontimeupdate=()=>{prog.value=cur.duration?cur.currentTime/cur.duration*100:0;time.textContent=f(cur.currentTime)+" / "+f(cur.duration||0)};cur.onended=()=>{if(repeat){cur.currentTime=0;cur.play();}}}
-function f(t){let m=Math.floor(t/60),s=Math.floor(t%60);return m+":"+(s<10?"0":"")+s}
-function stopAll(){document.querySelectorAll("audio").forEach(a=>{a.pause();a.currentTime=0});now.textContent="Currently Playing: Nothing";time.textContent="0:00 / 0:00"}
-function pauseSong(){if(cur)cur.pause()} function resumeSong(){if(cur)cur.play()}
-vol.oninput=()=>{if(cur)cur.volume=vol.value}
-prog.oninput=()=>{if(cur&&cur.duration)cur.currentTime=prog.value/100*cur.duration}
-function filter(){let q=search.value.toLowerCase();document.querySelectorAll("#grid button").forEach(b=>b.style.display=b.textContent.toLowerCase().includes(q)?"":"none")}
+let cur=null, repeat=false;
+
+const grid = document.getElementById('grid');
+const audioContainer = document.getElementById('audio-container');
+const now = document.getElementById('now');
+const prog = document.getElementById('prog');
+const time = document.getElementById('time');
+const vol = document.getElementById('vol');
+
+// Generate buttons and audio separate from each other
+songs.forEach(s => {
+    const formattedName = s.replace(/([A-Z])/g, ' $1').trim();
+    grid.innerHTML += `<button class="song-btn" onclick="play('${s}')">${formattedName}</button>`;
+    audioContainer.innerHTML += `<audio id="${s}" src="${s}.mp3"></audio>`;
+});
+
+function play(id){
+    stopAll();
+    cur = document.getElementById(id);
+    if (!cur) return;
+    
+    cur.volume = vol.value;
+    cur.play().catch(e => console.log("Playback error:", e));
+    
+    const formattedName = id.replace(/([A-Z])/g, ' $1').trim();
+    now.textContent = "Currently Playing: " + formattedName;
+    
+    cur.ontimeupdate = () => {
+        prog.value = cur.duration ? (cur.currentTime / cur.duration) * 100 : 0;
+        time.textContent = f(cur.currentTime) + " / " + f(cur.duration || 0);
+    };
+    
+    cur.onended = () => {
+        if (repeat) {
+            cur.currentTime = 0;
+            cur.play();
+        } else {
+            stopAll();
+        }
+    };
+}
+
+function f(t){
+    let m = Math.floor(t / 60), s = Math.floor(t % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+}
+
+function stopAll(){
+    document.querySelectorAll("audio").forEach(a => {
+        a.pause();
+        a.currentTime = 0;
+    });
+    now.textContent = "Currently Playing: Nothing";
+    time.textContent = "0:00 / 0:00";
+    prog.value = 0;
+}
+
+function pauseSong(){ if (cur) cur.pause(); } 
+function resumeSong(){ if (cur) cur.play(); }
+
+function toggleRepeat(btn) {
+    repeat = !repeat;
+    btn.innerText = repeat ? "Repeat: On" : "Repeat: Off";
+}
+
+vol.oninput = () => { if (cur) cur.volume = vol.value; }
+prog.oninput = () => { if (cur && cur.duration) cur.currentTime = (prog.value / 100) * cur.duration; }
+
+function filter(){
+    let q = document.getElementById('search').value.toLowerCase();
+    document.querySelectorAll(".song-btn").forEach(b => {
+        b.style.display = b.textContent.toLowerCase().includes(q) ? "" : "none";
+    });
+}
 </script>
+
 <footer>Disclaimer: You are responsible for how you use this soundboard and any audio you add. Respect copyright and applicable laws.</footer>
-</body></html>
+</body>
+</html>
